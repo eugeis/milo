@@ -39,9 +39,12 @@ public class EndpointUtil {
      */
     public static String getPath(@Nonnull String endpointUrl) {
         try {
-            URI uri = new URI(endpointUrl).parseServerAuthority();
+            Matcher matcher = ENDPOINT_URL_PATTERN.matcher(endpointUrl);
 
-            String path = uri.getPath();
+            String path = "";
+            if (matcher.matches()) {
+                path = matcher.group(4); // e.g. "/" or "/foo" or "/foo/bar"
+            }
 
             if (path == null || path.isEmpty()) {
                 path = "/";

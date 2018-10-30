@@ -491,7 +491,7 @@ public class UaTcpStackClient implements UaStackClient {
         bootstrap.group(client.getConfig().getEventLoop())
             .channel(NioSocketChannel.class)
             .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, client.getConfig().getAcknowledgeTimeout().intValue())
             .option(ChannelOption.TCP_NODELAY, true)
             .handler(initializer);
 

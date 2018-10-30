@@ -45,7 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SocketServers {
-
+    public static Boolean USE_RATE_LIMITING_HANDLER = true;
     private static final AsyncSemaphore SEMAPHORE = new AsyncSemaphore(1);
 
     static final ConcurrentMap<InetSocketAddress, SocketServer> SERVERS = Maps.newConcurrentMap();
@@ -205,7 +205,7 @@ public class SocketServers {
                         Function<String, Optional<UaTcpStackServer>> serverLookup =
                             endpointUrl -> getServerByEndpointUrl(address, endpointUrl);
 
-                        channel.pipeline().addLast(RateLimitingHandler.getInstance());
+                        if (USE_RATE_LIMITING_HANDLER) channel.pipeline().addLast(RateLimitingHandler.getInstance());
                         channel.pipeline().addLast(new UaTcpServerHelloHandler(serverLookup));
                     }
                 });
