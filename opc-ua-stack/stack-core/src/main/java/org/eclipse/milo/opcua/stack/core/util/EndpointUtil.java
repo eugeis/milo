@@ -27,7 +27,7 @@ public class EndpointUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(EndpointUtil.class);
 
     private static final Pattern ENDPOINT_URL_PATTERN =
-        Pattern.compile("(opc.tcp|http|https|opc.http|opc.https|opc.ws|opc.wss)://([^:/]+)(:\\d+)?(/.*)?");
+            Pattern.compile("(opc.tcp|http|https|opc.http|opc.https|opc.ws|opc.wss)://([^:/]+)(:\\d+)?(/.*)?");
 
     @Nullable
     public static String getScheme(@Nonnull String endpointUrl) {
@@ -81,11 +81,16 @@ public class EndpointUtil {
      */
     public static String getPath(@Nonnull String endpointUrl) {
         try {
+
             Matcher matcher = ENDPOINT_URL_PATTERN.matcher(endpointUrl);
 
             String path = "";
             if (matcher.matches()) {
                 path = matcher.group(4); // e.g. "/" or "/foo" or "/foo/bar"
+            }
+
+            if (path != null && path.contains(" ")) {
+                throw new IllegalArgumentException("no spaces allowed in path: " + path);
             }
 
             if (path == null || path.isEmpty()) {
@@ -113,7 +118,7 @@ public class EndpointUtil {
      * {@code hostname}.
      */
     public static EndpointDescription updateUrl(
-        @Nonnull EndpointDescription endpoint, @Nullable String hostname) {
+            @Nonnull EndpointDescription endpoint, @Nullable String hostname) {
 
         return updateUrl(endpoint, hostname, -1);
     }
@@ -132,17 +137,17 @@ public class EndpointUtil {
      * {@code hostname}.
      */
     public static EndpointDescription updateUrl(
-        @Nonnull EndpointDescription endpoint, @Nullable String hostname, int port) {
+            @Nonnull EndpointDescription endpoint, @Nullable String hostname, int port) {
 
         return new EndpointDescription(
-            updateUrl(endpoint.getEndpointUrl(), hostname, port),
-            endpoint.getServer(),
-            endpoint.getServerCertificate(),
-            endpoint.getSecurityMode(),
-            endpoint.getSecurityPolicyUri(),
-            endpoint.getUserIdentityTokens(),
-            endpoint.getTransportProfileUri(),
-            endpoint.getSecurityLevel()
+                updateUrl(endpoint.getEndpointUrl(), hostname, port),
+                endpoint.getServer(),
+                endpoint.getServerCertificate(),
+                endpoint.getSecurityMode(),
+                endpoint.getSecurityPolicyUri(),
+                endpoint.getUserIdentityTokens(),
+                endpoint.getTransportProfileUri(),
+                endpoint.getSecurityLevel()
         );
     }
 
