@@ -187,6 +187,12 @@ public class SessionManager implements
             .filter(ed -> endpointMatchesUrl(ed, request.getEndpointUrl()))
             .toArray(EndpointDescription[]::new);
 
+        if (serverEndpoints.length == 0) {
+            //take all
+            //TODO implement IP resolving and check IPs
+            serverEndpoints = server.getEndpointDescriptions().stream().toArray(EndpointDescription[]::new);
+        }
+
         ByteString clientNonce = request.getClientNonce();
 
         if (clientNonce.isNotNull() && (clientNonce.length() < 32)) {

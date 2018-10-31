@@ -167,7 +167,7 @@ public class ExampleServer {
 
         Set<String> hostnames = new LinkedHashSet<>();
         hostnames.add(HostnameUtil.getHostname());
-        hostnames.addAll(HostnameUtil.getHostnames("0.0.0.0"));
+        //hostnames.addAll(HostnameUtil.getHostnames("0.0.0.0"));
 
         for (String bindAddress : bindAddresses) {
             for (String hostname : hostnames) {
@@ -187,6 +187,7 @@ public class ExampleServer {
                     .setSecurityMode(MessageSecurityMode.None);
 
                 endpointConfigurations.add(buildTcpEndpoint(noSecurityBuilder));
+                /*
                 endpointConfigurations.add(buildHttpsEndpoint(noSecurityBuilder));
 
                 // TCP Basic256Sha256 / SignAndEncrypt
@@ -202,7 +203,7 @@ public class ExampleServer {
                         .setSecurityPolicy(SecurityPolicy.Basic256Sha256)
                         .setSecurityMode(MessageSecurityMode.Sign))
                 );
-
+*/
                 /*
                  * It's good practice to provide a discovery-specific endpoint with no security.
                  * It's required practice if all regular endpoints have security configured.
@@ -220,7 +221,7 @@ public class ExampleServer {
                     .setSecurityMode(MessageSecurityMode.None);
 
                 endpointConfigurations.add(buildTcpEndpoint(discoveryBuilder));
-                endpointConfigurations.add(buildHttpsEndpoint(discoveryBuilder));
+                //endpointConfigurations.add(buildHttpsEndpoint(discoveryBuilder));
             }
         }
 

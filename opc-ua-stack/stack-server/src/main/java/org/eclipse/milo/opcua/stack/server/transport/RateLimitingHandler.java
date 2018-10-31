@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  */
 @ChannelHandler.Sharable
 public class RateLimitingHandler extends AbstractRemoteAddressFilter<InetSocketAddress> {
-
+    public static Boolean USE_RATE_LIMITING_HANDLER = true;
     /**
      * Cumulative count of all connection rejections for the lifetime of the server.
      */
@@ -109,7 +109,7 @@ public class RateLimitingHandler extends AbstractRemoteAddressFilter<InetSocketA
     protected synchronized boolean accept(ChannelHandlerContext ctx, InetSocketAddress isa) {
         final InetAddress address = isa.getAddress();
 
-        if (!enabled || address.isLoopbackAddress()) {
+        if (!USE_RATE_LIMITING_HANDLER || !enabled || address.isLoopbackAddress()) {
             return true;
         }
 
