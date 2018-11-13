@@ -40,9 +40,12 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.util.ExecutionQueue;
+import org.eclipse.milo.opcua.stack.server.EndpointConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SubscriptionModel {
-
+    private final Logger logger = LoggerFactory.getLogger("DIAG");
     private final Set<DataItem> itemSet = Collections.newSetFromMap(Maps.newConcurrentMap());
 
     private final List<ScheduledUpdate> schedule = Lists.newCopyOnWriteArrayList();
@@ -53,10 +56,11 @@ public class SubscriptionModel {
 
     private final OpcUaServer server;
     private final AttributeServices attributeServices;
+    private final String uri;
 
     public SubscriptionModel(OpcUaServer server, AttributeServices attributeServices) {
         this.server = server;
-
+        uri = server.getConfig().getEndpoints().iterator().next().getEndpointUrl();
         this.attributeServices = attributeServices;
 
         executor = server.getExecutorService();
@@ -89,16 +93,16 @@ public class SubscriptionModel {
 
     private void reschedule() {
         Map<Double, List<DataItem>> bySamplingInterval = itemSet.stream()
-            .filter(DataItem::isSamplingEnabled)
-            .collect(Collectors.groupingBy(DataItem::getSamplingInterval));
+                .filter(DataItem::isSamplingEnabled)
+                .collect(Collectors.groupingBy(DataItem::getSamplingInterval));
 
         List<ScheduledUpdate> updates = bySamplingInterval.keySet().stream()
-            .map(samplingInterval -> {
-                List<DataItem> items = bySamplingInterval.get(samplingInterval);
+                .map(samplingInterval -> {
+                    List<DataItem> items = bySamplingInterval.get(samplingInterval);
 
-                return new ScheduledUpdate(samplingInterval, items);
-            })
-            .collect(Collectors.toList());
+                    return new ScheduledUpdate(samplingInterval, items);
+                })
+                .collect(Collectors.toList());
 
         schedule.forEach(ScheduledUpdate::cancel);
         schedule.clear();
@@ -125,19 +129,21 @@ public class SubscriptionModel {
         @Override
         public void run() {
             List<PendingRead> pending = items.stream()
-                .map(item -> new PendingRead(item.getReadValueId()))
-                .collect(Collectors.toList());
+                    .map(item -> new PendingRead(item.getReadValueId()))
+                    .collect(Collectors.toList());
 
             List<ReadValueId> ids = pending.stream()
-                .map(PendingRead::getInput)
-                .collect(Collectors.toList());
+                    .map(PendingRead::getInput)
+                    .collect(Collectors.toList());
 
             CompletableFuture<List<DataValue>> future = new CompletableFuture<>();
 
             ReadContext context = new ReadContext(
-                server, null, future, new DiagnosticsContext<>());
+                    server, null, future, new DiagnosticsContext<>());
 
             future.thenAcceptAsync(values -> {
+                long start = System.currentTimeMillis();
+
                 Iterator<DataItem> ii = items.iterator();
                 Iterator<DataValue> vi = values.iterator();
 
@@ -151,15 +157,21 @@ public class SubscriptionModel {
                         UInteger attributeId = item.getReadValueId().getAttributeId();
 
                         value = (AttributeId.Value.isEqual(attributeId)) ?
-                            DataValue.derivedValue(value, timestamps) :
-                            DataValue.derivedNonValue(value, timestamps);
+                                DataValue.derivedValue(value, timestamps) :
+                                DataValue.derivedNonValue(value, timestamps);
                     }
 
                     item.setValue(value);
                 }
 
                 if (!cancelled) {
-                    scheduler.schedule(this, samplingInterval, TimeUnit.MILLISECONDS);
+                    long duration = System.currentTimeMillis() - start;
+                    long currentSampling = samplingInterval - duration;
+                    long useSampling = currentSampling < 0 ? 0 : currentSampling;
+
+                    logger.trace("{}: schedule next sampling with delay {}/{}(duration={}) for {}", uri,
+                            useSampling, samplingInterval, duration, items);
+                    scheduler.schedule(this, useSampling, TimeUnit.MILLISECONDS);
                 }
             }, executor);
 

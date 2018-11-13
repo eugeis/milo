@@ -100,6 +100,8 @@ public class Subscription {
 
     private final UInteger subscriptionId;
 
+    protected final String uri;
+
     public Subscription(SubscriptionManager subscriptionManager,
                         UInteger subscriptionId,
                         double publishingInterval,
@@ -119,6 +121,8 @@ public class Subscription {
 
         this.publishingEnabled = publishingEnabled;
         this.priority = priority;
+
+        uri = subscriptionManager.getServer().getConfig().getEndpoints().iterator().next().getEndpointUrl();
 
         resetKeepAliveCounter();
         resetLifetimeCounter();
@@ -471,6 +475,9 @@ public class Subscription {
         );
 
         service.setResponse(response);
+
+        logger.trace("{}: sendNotifications, notifications={}, subscriptionId={}", uri,
+                notifications, subscriptionId);
 
         logger.debug(
             "[id={}] returning {} DataChangeNotification(s) and " +

@@ -29,9 +29,10 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class BaseMonitoredItem<T> implements MonitoredItem {
-
     private static final int MAX_QUEUE_SIZE = 0xFFFF;
 
     protected volatile Map<UInteger, BaseMonitoredItem<?>> triggeredItems;
@@ -52,18 +53,21 @@ public abstract class BaseMonitoredItem<T> implements MonitoredItem {
     protected volatile MonitoringMode monitoringMode;
     protected volatile TimestampsToReturn timestamps;
 
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
+    protected final String uri;
+
     protected BaseMonitoredItem(
-        OpcUaServer server,
-        Session session,
-        UInteger id,
-        UInteger subscriptionId,
-        ReadValueId readValueId,
-        MonitoringMode monitoringMode,
-        TimestampsToReturn timestamps,
-        UInteger clientHandle,
-        double samplingInterval,
-        UInteger queueSize,
-        boolean discardOldest) {
+            OpcUaServer server,
+            Session session,
+            UInteger id,
+            UInteger subscriptionId,
+            ReadValueId readValueId,
+            MonitoringMode monitoringMode,
+            TimestampsToReturn timestamps,
+            UInteger clientHandle,
+            double samplingInterval,
+            UInteger queueSize,
+            boolean discardOldest) {
 
         this.server = server;
         this.session = session;
@@ -79,6 +83,8 @@ public abstract class BaseMonitoredItem<T> implements MonitoredItem {
         setQueueSize(queueSize);
 
         queue = new RingBuffer<>(this.queueSize);
+
+        uri = server.getConfig().getEndpoints().iterator().next().getEndpointUrl();
     }
 
     protected void setQueueSize(UInteger queueSize) {
@@ -101,7 +107,8 @@ public abstract class BaseMonitoredItem<T> implements MonitoredItem {
         if (queueIsEmpty && triggered) {
             triggered = false;
         }
-
+        logger.trace("{}: getNotifications(max={}) => {}={}, isNowEmpty={}, clientHandle={}, subscriptionId={}",
+                uri, max, readValueId.getNodeId(), notifications, queueIsEmpty, clientHandle, subscriptionId);
         return queueIsEmpty;
     }
 

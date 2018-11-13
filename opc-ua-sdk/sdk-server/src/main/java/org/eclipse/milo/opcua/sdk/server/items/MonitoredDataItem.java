@@ -36,11 +36,12 @@ import org.eclipse.milo.opcua.stack.core.types.structured.EventFilter;
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemNotification;
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringFilter;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 public class MonitoredDataItem extends BaseMonitoredItem<DataValue> implements DataItem {
-
     private static final DataChangeFilter DEFAULT_FILTER = new DataChangeFilter(
         DataChangeTrigger.StatusValue,
         uint(DeadbandType.None.getValue()),
@@ -76,6 +77,8 @@ public class MonitoredDataItem extends BaseMonitoredItem<DataValue> implements D
         boolean valuePassesFilter = DataChangeMonitoringFilter.filter(lastValue, value, filter);
 
         if (valuePassesFilter) {
+            logger.trace("{}: setValue {}={}, clientHandle={}, subscriptionId={}", uri, readValueId.getNodeId(), value,
+                    clientHandle, subscriptionId);
             lastValue = value;
 
             enqueue(value);
@@ -83,6 +86,8 @@ public class MonitoredDataItem extends BaseMonitoredItem<DataValue> implements D
             if (triggeredItems != null) {
                 triggeredItems.values().forEach(item -> item.triggered = true);
             }
+        } else {
+            logger.trace("{}: ignore setValue {}={}", uri, readValueId.getNodeId(), value);
         }
     }
 
