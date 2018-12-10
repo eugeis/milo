@@ -169,8 +169,11 @@ public class SubscriptionModel {
                     long currentSampling = samplingInterval - duration;
                     long useSampling = currentSampling < 0 ? 0 : currentSampling;
 
-                    logger.trace("{}: schedule next sampling with delay {}/{}(duration={}) for {}", uri,
-                            useSampling, samplingInterval, duration, items);
+                    if (currentSampling <= 0) {
+                        logger.warn("{}: the sampling was too slow, duration={}, samplingInterval={}), items size={}",
+                                uri, duration, samplingInterval, items.size());
+
+                    }
                     scheduler.schedule(this, useSampling, TimeUnit.MILLISECONDS);
                 }
             }, executor);
